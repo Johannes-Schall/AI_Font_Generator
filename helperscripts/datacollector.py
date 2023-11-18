@@ -20,7 +20,7 @@ import re
 
 METADATA = 'METADATA.pb'
 FONTTYPE = '.ttf'
-DESCRIPTION_JSON = 'description.json'
+DESCRIPTION_JSON = '00dataset.json'
 IGNORED_KEYS = ['designer', 'date_added', 'full_name', 'copyright']
 
 
@@ -57,8 +57,8 @@ def parse_metadata(contents):
 
                         data.append(value)  # Append new value
                         metadata[key] = data
-
-    print(metadata)
+                        
+    metadata['used'] = True
 
     return metadata
 
