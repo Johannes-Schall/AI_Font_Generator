@@ -1,4 +1,5 @@
 import os
+import shutil
 from tqdm import tqdm
 from fontTools import ttLib
 
@@ -46,7 +47,11 @@ def filter_fonts(font_files_path,
             continue
             
         usable_fonts += 1
-        os.rename(font_file_path, os.path.join(processed_fonts_path, font_file))
+        processed_file_path = os.path.join(processed_fonts_path, font_file)
+        # if file exists, remove it
+        if os.path.exists(processed_file_path):
+            os.remove(processed_file_path)
+        shutil.move(font_file_path, processed_fonts_path)  # Move the new file
 
     print(f"Processed {idx} fonts. Found {usable_fonts} usable fonts and moved them to {processed_fonts_path}.")
 
