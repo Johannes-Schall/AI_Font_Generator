@@ -36,7 +36,8 @@ def render_font(font_path,
 
 def plot_glyphs(font_file_paths,
                 size: int=64,
-                chars: str="Äß"):
+                chars: str="Äß",
+                figsize=(20, 20)):
     """
     Plots the same glyphs of different fonts.
 
@@ -44,20 +45,24 @@ def plot_glyphs(font_file_paths,
         font_file_paths (list): List of font file paths
         size (int, optional): Size of the image (size x size). Defaults to 64.
         chars (str, optional): Characters to render. Defaults to "Äß".
+        figsize (tuple, optional): Size of the figure. Defaults to (20, 20).
 
     Returns:
         None
     """
     num_fonts = len(font_file_paths)
-    size = int(np.ceil(np.sqrt(num_fonts)))
+    size_port_grid = int(np.ceil(np.sqrt(num_fonts)))
 
     for char in chars:
-        fig, ax = plt.subplots(size, size, figsize=(20, 20))
+        fig, ax = plt.subplots(size_port_grid, 
+                               size_port_grid, 
+                               figsize=figsize)
 
         for idx, font_file_path in enumerate(font_file_paths):
             font_array = render_font(font_file_path, size, char)
-            ax[idx // size, idx % size].imshow(font_array[:, :, 0], cmap='gray')
+            ax[idx // size_port_grid, idx % size_port_grid].imshow(font_array[:, :, 0], cmap='gray')
             #turing the axis ticks off
-            ax[idx // size, idx % size].set_xticks([])
+            ax[idx // size_port_grid, idx % size_port_grid].set_xticks([])
+            ax[idx // size_port_grid, idx % size_port_grid].set_yticks([])
 
         plt.show()
