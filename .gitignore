@@ -3,10 +3,12 @@ __pycache__/
 *.py[cod]
 *$py.class
 
-# No single font files. Needs to be processed on local machine
+# No single font files and nothing from folder data. 
+# Needs to be processed on local machine
 *.ttf
 *.otf
 *.pfb
+/data/
 
 # C extensions
 *.so
