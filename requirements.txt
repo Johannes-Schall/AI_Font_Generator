@@ -1,0 +1,10 @@
+charset-normalizer==3.1.0
+fonttools==4.25.0
+ipykernel==6.25.0
+matplotlib==3.8.0
+numpy==1.26.0
+pandas==2.1.1
+Pillow==10.0.1
+requests==2.31.0
+tensorflow==2.10.0
+tqdm==4.65.0
