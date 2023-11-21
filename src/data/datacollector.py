@@ -19,7 +19,7 @@ import json
 import re
 
 METADATA = 'METADATA.pb'
-FONTTYPE = '.ttf'
+FONTTYPES = ['.ttf', '.otf']
 DESCRIPTION_JSON = '00dataset.json'
 IGNORED_KEYS = ['designer', 'date_added', 'full_name', 'copyright']
 
@@ -71,6 +71,8 @@ def collectfonts(source_directory, destination_directory):
         source_directory (String): Relative path to source directory
         destination_directory (String): Relative path to destination directory
     """
+    
+    file_counter = 0
 
     fonts_metadata = []
     description_json = os.path.join(destination_directory, DESCRIPTION_JSON)
@@ -78,42 +80,34 @@ def collectfonts(source_directory, destination_directory):
     if not os.path.exists(destination_directory):
         os.makedirs(destination_directory)
 
-    # Durchlaufe alle Ordner und Unterordner im Quellverzeichnis
+    # Search all folders and subfolders in source directory
     for root, _, files in os.walk(source_directory):
-        if METADATA in files:
-            with open(os.path.join(root, METADATA), 'r') as metafile:
-                metadata = parse_metadata(metafile.read())
+        for file in files:
+            # TODO: Check for zip files
+            if file.endswith(tuple(FONTTYPES)):
+                source_file = os.path.join(root, file)
+                destination_file = os.path.join(
+                    destination_directory, file)
 
-                for file in files:
-                    if file.endswith(FONTTYPE):
-                        source_file = os.path.join(root, file)
-                        destination_file = os.path.join(
-                            destination_directory, file)
+                # Copy file to destination directory
+                shutil.copy2(source_file, destination_file)
+                print(f"Copy: {source_file} -> {destination_file}")
+                file_counter += 1
+    print(f"Total files copied: {file_counter}")
+    #          Metadata not availabe in databases and not yet used in project
+    #            
+    #             if METADATA in files:
+    #                 with open(os.path.join(root, METADATA), 'r', encoding='utf-8') as metafile:
+    #                     metadata = parse_metadata(metafile.read())
+                
 
-                        # Copy ttf to destination directory
-                        shutil.copy2(source_file, destination_file)
-                        print(f"Copy: {source_file} -> {destination_file}")
+    #             # Collect metadata
+    #             font_metadata = metadata.copy()
+    #             font_metadata['filename'] = file
+    #             fonts_metadata.append(font_metadata)
 
-                        # Collect metadata
-                        font_metadata = metadata.copy()
-                        font_metadata['filename'] = file
-                        fonts_metadata.append(font_metadata)
+    # # Write json
+    # os.makedirs(os.path.dirname(description_json), exist_ok=True)
 
-    # Write json
-    os.makedirs(os.path.dirname(description_json), exist_ok=True)
-
-    with open(description_json, 'w', encoding='utf-8') as jsonfile:
-        json.dump(fonts_metadata, jsonfile, indent=4)
-
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser()
-    parser.add_argument('source_directory', type=str, help='Source directory')
-    parser.add_argument('destination_directory',
-                        type=str, help='Target directory')
-    args = parser.parse_args()
-
-    try:
-        collectfonts(args.source_directory, args.destination_directory)
-    except Exception as e:
-        print(f"Error: {e}")
+    # with open(description_json, 'w', encoding='utf-8') as jsonfile:
+    #     json.dump(fonts_metadata, jsonfile, indent=4)
