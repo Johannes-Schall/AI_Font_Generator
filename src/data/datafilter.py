@@ -131,7 +131,7 @@ def filter_fonts(font_files_path,
                 os.remove(processed_file_path)
             shutil.move(font_file_path, processed_fonts_path)  # Move the new file
 
-        log_file.write(f"Filter results:\n")
+        log_file.write(f"\n\nFilter results:\n")
         for key, value in filter_counter_dict.items():
             log_file.write(f"{key}: {value}\n")
 
