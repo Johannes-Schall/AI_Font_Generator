@@ -17,6 +17,7 @@ import shutil
 # import json
 import re
 import zipfile
+from tqdm import tqdm
 
 METADATA = 'METADATA.pb'
 ZIPTYPE = '.zip'
@@ -82,11 +83,13 @@ def collectfonts(source_directory, destination_directory):
         os.makedirs(destination_directory)
 
     # Go through hierarchy and unzip all zip files
+    print("Unpacking all zip files...")
     search_zips(source_directory)
 
     # Search all folders and subfolders in source directory
+    print("Collecting fonts...")
     for root, _, files in os.walk(source_directory):
-        for file in files:
+        for file in tqdm(files):
             if file.endswith(tuple(FONTTYPES)):
                 source_file = os.path.join(root, file)
                 destination_file = os.path.join(
@@ -94,7 +97,7 @@ def collectfonts(source_directory, destination_directory):
 
                 # Copy file to destination directory
                 shutil.copy2(source_file, destination_file)
-                print(f"Copy: {source_file} -> {destination_file}")
+                #print(f"Copy: {source_file} -> {destination_file}")
                 file_counter += 1
     print(f"Total files copied: {file_counter}")
     #          Metadata not availabe in databases and not yet used in project
