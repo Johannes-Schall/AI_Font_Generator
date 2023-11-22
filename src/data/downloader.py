@@ -2,11 +2,13 @@
 import os
 import subprocess
 import json
+import requests
 
-DBCONFIG = "source.json"
+DBCONFIG = 'source.json'
+GLYZPHAZZN_URL = 'https://storage.googleapis.com/magentadata/models/svg_vae/glyphazzn_urls.txt'
 
 
-def get_fonts(db_flags, path_config, path_target):
+def get_font_dbs(db_flags, path_config, path_target):
     """ Prepare the download of font libraries from github repositories.
 
     Args:
@@ -55,14 +57,17 @@ def get_github_db(path_target, db_name, repo_url, directory_list=None, private=F
     # Prepare SSH key for private repositories
     env = None
     if private:
+        print("Privates REPO erkannt. Lade Schlüssel...")
         env = os.environ.copy()
         ssh_key_path = os.path.join(path_target, db_name + "_key")
         env["GIT_SSH_COMMAND"] = f"ssh -i {ssh_key_path}"
+        print("Schlüssel geladen.")
 
     # Check if target directory is already a git repository
     # if not, initialize it
     is_repo_initialized = os.path.isdir(os.path.join(path_db, '.git'))
     if not is_repo_initialized:
+        print("Initialisiere Repo")
         subprocess.run(['git', 'init', path_db], check=True)
         subprocess.run(['git', 'config', 'core.sparseCheckout', 'true'],
                        cwd=path_db,
@@ -73,6 +78,7 @@ def get_github_db(path_target, db_name, repo_url, directory_list=None, private=F
     existing_remotes = subprocess.check_output(
         ['git', 'remote'], cwd=path_db).decode().split()
     if 'origin' not in existing_remotes:
+        print("Füge Remote hinzu")
         subprocess.run(['git', 'remote', 'add', '-f', 'origin',
                        repo_url], cwd=path_db, check=True)
 
@@ -95,6 +101,7 @@ def get_github_db(path_target, db_name, repo_url, directory_list=None, private=F
                        env=env)
 
         if is_repo_initialized:
+            print("Füge reset durch")
             subprocess.run(['git', 'reset', '--hard', 'origin/main'],
                            cwd=path_db,
                            check=True)
@@ -104,3 +111,21 @@ def get_github_db(path_target, db_name, repo_url, directory_list=None, private=F
         print("File transfer successful")
     except subprocess.CalledProcessError as e:
         print(f"Error: {e}")
+
+def update_glyphazzn(path_target):
+    try:
+        path_db = os.path.join(path_target, db_name)
+        
+        # Versuch, die Datei aus dem Internet herunterzuladen
+        response = requests.get(GLYZPHAZZN_URL)
+        response.raise_for_status()  # Löst eine Ausnahme aus, wenn ein HTTP-Fehler auftritt
+
+        # Datei speichern
+        with open(local_filename, 'w', encoding='utf-8') as file:
+            file.write(response.text)
+
+        print("Glyzphazzn link list updated.")
+    except requests.RequestException as e:
+        # Bei einem Fehler, wird False zurückgegeben
+        print(f"Download failed: {e}")
+        print("Using existing link list.")
