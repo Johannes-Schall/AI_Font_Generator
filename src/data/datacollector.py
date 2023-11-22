@@ -14,11 +14,12 @@
 
 import os
 import shutil
-import argparse
-import json
+# import json
 import re
+import zipfile
 
 METADATA = 'METADATA.pb'
+ZIPTYPE = '.zip'
 FONTTYPES = ['.ttf', '.otf']
 DESCRIPTION_JSON = '00dataset.json'
 IGNORED_KEYS = ['designer', 'date_added', 'full_name', 'copyright']
@@ -57,7 +58,7 @@ def parse_metadata(contents):
 
                         data.append(value)  # Append new value
                         metadata[key] = data
-                        
+
     metadata['used'] = True
 
     return metadata
@@ -66,12 +67,12 @@ def parse_metadata(contents):
 def collectfonts(source_directory, destination_directory):
     """Goes through source directory and all subdirectories
     and copies all font files to destination directory.
-    
+
     Args:
         source_directory (String): Relative path to source directory
         destination_directory (String): Relative path to destination directory
     """
-    
+
     file_counter = 0
 
     fonts_metadata = []
@@ -80,10 +81,12 @@ def collectfonts(source_directory, destination_directory):
     if not os.path.exists(destination_directory):
         os.makedirs(destination_directory)
 
+    # Go through hierarchy and unzip all zip files
+    search_zips(source_directory)
+
     # Search all folders and subfolders in source directory
     for root, _, files in os.walk(source_directory):
         for file in files:
-            # TODO: Check for zip files
             if file.endswith(tuple(FONTTYPES)):
                 source_file = os.path.join(root, file)
                 destination_file = os.path.join(
@@ -95,11 +98,10 @@ def collectfonts(source_directory, destination_directory):
                 file_counter += 1
     print(f"Total files copied: {file_counter}")
     #          Metadata not availabe in databases and not yet used in project
-    #            
+    #
     #             if METADATA in files:
     #                 with open(os.path.join(root, METADATA), 'r', encoding='utf-8') as metafile:
     #                     metadata = parse_metadata(metafile.read())
-                
 
     #             # Collect metadata
     #             font_metadata = metadata.copy()
@@ -111,3 +113,32 @@ def collectfonts(source_directory, destination_directory):
 
     # with open(description_json, 'w', encoding='utf-8') as jsonfile:
     #     json.dump(fonts_metadata, jsonfile, indent=4)
+
+
+def search_zips(source_directory):
+    """ Call to recursively search for zip files in a directory and unpack them
+
+    Args:
+        source_directory (String): Path to hierarchy of directories
+    """
+    for root, _, files in os.walk(source_directory):
+        for file in files:
+            if file.endswith(ZIPTYPE):
+                file_path = os.path.join(root, file)
+
+                unpack(file_path, root)
+                # Delete zip file after unpacking
+                os.remove(file_path)
+                # Recursively search for zip files in unpacked directory
+                search_zips(root)
+
+
+def unpack(file_path, extract_to):
+    """ Unpacks zip files to a destination directory
+
+    Args:
+        file_path (String): Path to zip file
+        extract_to (String): Path to destination directory
+    """
+    with zipfile.ZipFile(file_path, 'r') as zip_ref:
+        zip_ref.extractall(extract_to)
