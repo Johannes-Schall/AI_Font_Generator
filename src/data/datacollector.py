@@ -13,109 +13,125 @@
 """
 
 import os
-import shutil
-# import json
-import re
+import json
 import zipfile
-from tqdm import tqdm
+import re
+import subprocess
 
 METADATA = 'METADATA.pb'
 ZIPTYPE = '.zip'
 FONTTYPES = ['.ttf', '.otf']
 DESCRIPTION_JSON = '00dataset.json'
+DIR_CONVERTED = 'converted'
 IGNORED_KEYS = ['designer', 'date_added', 'full_name', 'copyright']
 
 
-def parse_metadata(contents):
+def parse_metadata(metadata_path, filename):
     """Parses the metadata file and extracts required fields."""
-    metadata = {}
 
-    lines = contents.split('\n')
+    with open(metadata_path, 'r', encoding='utf-8') as file:
+        content = file.read()
 
-    # Remove spaces at the beginning of the line (e.g. in fonts{xxxx})
-    for entry in lines:
-        if entry.startswith(' '):
-            line = entry.strip()
-        else:
-            line = entry
-        key_value_match = re.match(r'(\w+):[ ]*"?(.*?)"?$', line)
-        if key_value_match:
-            # This should catch all values that are written in the style of key: value
-            key, value = key_value_match.groups()
+    general_info = {}
 
-            if key not in IGNORED_KEYS:
-                if key not in metadata:
-                    metadata[key] = value
-                else:
-                    if metadata[key] != value:
-                        # Some keys have more than just one value, e.g. subsets and classifications
-                        # In this case, the value might be a list, so we have to check for that
-                        # If not a list, we have to create a list and append the existing value
-                        if not isinstance(metadata[key], list):
-                            # Turn existing value into list
-                            data = [metadata[key]]
-                        else:
-                            data = metadata[key]  # Use existing list
+    lines = content.split('\n')
+    for line in lines:
+        if line.startswith('license:'):
+            general_info['license'] = line.split(':')[1].strip().strip('"')
+        if line.startswith('category:'):
+            general_info['category'] = line.split(':')[1].strip().strip('"')
+        if line.startswith('subsets:'):
+            if 'subsets' not in general_info:
+                general_info['subsets'] = [
+                    line.split(':')[1].strip().strip('"')]
+            else:
+                general_info['subsets'].append(
+                    line.split(':')[1].strip().strip('"'))
 
-                        data.append(value)  # Append new value
-                        metadata[key] = data
+    specific_info = {}
+    fonts_data = re.findall(r'fonts \{(.*?)\}', content, re.DOTALL)
+    for font_data in fonts_data:
+        font_info = {}
+        for line in font_data.split('\n'):
+            if line.strip() and ':' in line:
+                key, value = line.split(':', 1)
+                # Speichern aller Schlüssel, aber später nur 'style' und 'weight' verwenden
+                font_info[key.strip()] = value.strip().strip('"')
+        if font_info.get('filename') == filename:
+            # Auswahl nur der spezifischen Informationen 'style' und 'weight'
+            specific_info = {k: v for k, v in font_info.items() if k in [
+                'style', 'weight']}
+            break
 
-    metadata['used'] = True
-
+    metadata = {**general_info, **specific_info}
     return metadata
 
 
-def collectfonts(source_directory, destination_directory):
+def collectfonts(source_directory, destination_converted_files):
     """Goes through source directory and all subdirectories
-    and copies all font files to destination directory.
+    and writes a json file with all the font information.
 
     Args:
-        source_directory (String): Relative path to source directory
-        destination_directory (String): Relative path to destination directory
+        source_directory (String): Relative path to source directory,
+                font files must be in subdirectories. JSON file will be
+                written to this directory.
+        destination_converted_files (String): Path to the directory where
+                the converted files will be saved.
     """
 
     file_counter = 0
+    file_ttf = 0
+    file_otf = 0
+    file_usable = 0
 
-    fonts_metadata = []
-    description_json = os.path.join(destination_directory, DESCRIPTION_JSON)
+    fonts_metadata = {}
 
-    if not os.path.exists(destination_directory):
-        os.makedirs(destination_directory)
+
 
     # Go through hierarchy and unzip all zip files
     print("Unpacking all zip files...")
     search_zips(source_directory)
 
+    print("Converting all OTF files to TTF...")
+    run_ttf_converter(source_directory, destination_converted_files)
+
     # Search all folders and subfolders in source directory
     print("Collecting fonts...")
     for root, _, files in os.walk(source_directory):
-        for file in tqdm(files):
-            if file.endswith(tuple(FONTTYPES)):
-                source_file = os.path.join(root, file)
-                destination_file = os.path.join(
-                    destination_directory, file)
+        for file in files:
+            file_counter += 1
+            if file.lower().endswith(tuple(FONTTYPES)):
+                if file.lower().endswith('.ttf'):
+                    file_ttf += 1
+                elif file.lower().endswith('.otf'):
+                    file_otf += 1
 
-                # Copy file to destination directory
-                shutil.copy2(source_file, destination_file)
-                #print(f"Copy: {source_file} -> {destination_file}")
-                file_counter += 1
-    print(f"Total files copied: {file_counter}")
-    #          Metadata not availabe in databases and not yet used in project
-    #
-    #             if METADATA in files:
-    #                 with open(os.path.join(root, METADATA), 'r', encoding='utf-8') as metafile:
-    #                     metadata = parse_metadata(metafile.read())
+                if file.lower()[:-4] not in fonts_metadata:
+                    filepath = os.path.join(root, file)
+                    normalized_filepath = os.path.normpath(filepath)
+                    font_info = {'path': normalized_filepath, 'used': True}
 
-    #             # Collect metadata
-    #             font_metadata = metadata.copy()
-    #             font_metadata['filename'] = file
-    #             fonts_metadata.append(font_metadata)
+                    file_usable += 1
 
-    # # Write json
-    # os.makedirs(os.path.dirname(description_json), exist_ok=True)
+                    metadata_path = os.path.join(root, METADATA)
+                    if os.path.exists(metadata_path):
+                        font_info['metadata'] = parse_metadata(
+                            metadata_path, file)
 
-    # with open(description_json, 'w', encoding='utf-8') as jsonfile:
-    #     json.dump(fonts_metadata, jsonfile, indent=4)
+                    fonts_metadata[file.lower()[:-4]] = font_info
+
+    # Write json
+    description_json = os.path.join(source_directory, DESCRIPTION_JSON)
+    os.makedirs(os.path.dirname(description_json), exist_ok=True)
+
+    with open(description_json, 'w', encoding='utf-8') as jsonfile:
+        json.dump(fonts_metadata, jsonfile, indent=4)
+
+    print(f"Total files: {file_counter}")
+    print(f"Fonts files: {file_ttf + file_otf}")
+    print(f"- TTF files: {file_ttf}")
+    print(f"- OTF files: {file_otf}")
+    print(f"Usable files: {file_usable}")
 
 
 def search_zips(source_directory):
@@ -145,3 +161,11 @@ def unpack(file_path, extract_to):
     """
     with zipfile.ZipFile(file_path, 'r') as zip_ref:
         zip_ref.extractall(extract_to)
+
+
+def run_ttf_converter(input_dir, output_dir):
+    script_path = "path/to/ttf-converter.py"
+
+    command = ["python", script_path, "--input-dir", input_dir, "--output-dir", output_dir]
+
+    subprocess.run(command, check=True)

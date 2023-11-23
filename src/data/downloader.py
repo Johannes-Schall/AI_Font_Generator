@@ -5,7 +5,6 @@ import json
 import re
 from concurrent.futures import ThreadPoolExecutor
 import requests
-from tqdm import tqdm
 
 
 DBCONFIG = 'source.json'
@@ -172,6 +171,9 @@ def extract_urls(path_glyphazzn, filename, path_target):
 
     input_file_path = os.path.join(path_glyphazzn, filename)
     out_file_path = os.path.join(path_target, filename[:-8] + '.txt')
+    
+    if not os.path.exists(path_target):
+        os.makedirs(path_target)
 
     # Regex zum Finden von URLs
     url_regex = r'https?://\S+'
@@ -259,7 +261,7 @@ def download_from_list(url_list, path_target):
     # if url_list is a list
     if isinstance(url_list, list):
         files_downloaded = 0
-        for url in tqdm(url_list):
+        for url in url_list:
             try:
                 response = requests.get(url, timeout=1)
                 if response.status_code == 200:
