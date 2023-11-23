@@ -6,7 +6,8 @@ import matplotlib.pyplot as plt
 
 def render_font(font_path, 
                 size: int, 
-                chars: str="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789ÄäÖöÜüß"):
+                chars: str="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789ÄäÖöÜüß",
+                normalize: bool=False):
     """
     Renders glyphs of a font as a numpy array.
 
@@ -21,18 +22,43 @@ def render_font(font_path,
     font_size = int(0.7*size)
     text_start = (int(0.15*size), int(0.15*size))
     font = ImageFont.truetype(font_path, font_size)
-    arrays = []
-
-    for char in chars:
+    # Reserve memory for the arrays
+    arrays = np.empty((size, size, len(chars)))
+    
+    for idx, char in enumerate(chars):
         # Modes: 1 (1-bit pixels, black and white, stored with one pixel per byte)
         #        L (8-bit pixels, black and white)
         image = Image.new('L', (size, size), 255)
         draw = ImageDraw.Draw(image)
         draw.text(text_start, char, font=font, fill=0)
-        arrays.append(np.array(image).reshape((size, size, 1)))
+        arrays[:, :, idx] = np.array(image)
 
-    return np.concatenate(arrays, axis=2)
+    if normalize:
+        arrays = arrays / 255.
 
+    return arrays
+
+def render_fonts(font_file_paths: list,
+                 size: int=64,
+                 chars: str="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789ÄäÖöÜüß",
+                 normalize: bool=False):
+    """
+    Renders glyphs of multiple fonts as a numpy array.
+    
+    Args:
+        font_file_paths (list): List of font file paths
+        size (int, optional): Size of the image (size x size). Defaults to 64.
+        chars (str, optional): Characters to render. Defaults to "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789ÄäÖöÜüß".
+        normalize (bool, optional): Normalize the array. Defaults to False.
+    
+    Returns:
+        np.array: Array of shape (len(font_file_paths), size, size, len(chars))
+    """
+    # reserve memory for the arrays
+    arrays = np.empty((len(font_file_paths), size, size, len(chars)))
+    for idx, font_file_path in enumerate(font_file_paths):
+        arrays[idx, :, :, :] = render_font(font_file_path, size, chars, normalize)
+    return arrays
 
 def plot_glyphs(font_file_paths,
                 size: int=64,
