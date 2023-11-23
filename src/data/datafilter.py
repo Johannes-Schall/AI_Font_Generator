@@ -5,7 +5,13 @@ from fontTools import ttLib
 
 def has_not_all_chars(font: ttLib.TTFont, chars_to_check: str, *args, **kwargs):
     # chars_in_font = {chr(c) for c in font['cmap'].tables[1].cmap.keys()}
-    chars_in_font = {chr(c) for c in font['cmap'].getBestCmap().keys()}
+    try:
+        chars_in_font = {chr(c) for c in font['cmap'].getBestCmap().keys()}
+    except OverflowError:
+        # This happens when the cmap is too large
+        # OverflowError: Python int too large to convert to C int
+        print(f"OverflowError: Python int too large to convert to C int")
+        return True
     chars_to_check = {c for c in chars_to_check}
     return not chars_to_check.issubset(chars_in_font)
 
@@ -15,7 +21,12 @@ def has_empty_glyphs(font: ttLib.TTFont, chars_to_check: str = None, *args, **kw
 
     for char in chars_to_check:
         #print(char)
-        glyph = font['glyf'].glyphs[font['cmap'].getBestCmap()[ord(char)]]
+        try:
+            glyph = font['glyf'].glyphs[font['cmap'].getBestCmap()[ord(char)]]
+        except KeyError:
+            # Handling KeyError: 'glyph00252'
+            # TODO: Understand why this happens
+            return True
         if glyph_is_empty(glyph):
             return True
     return False
