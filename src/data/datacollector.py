@@ -16,7 +16,6 @@ import os
 import json
 import zipfile
 import re
-import subprocess
 
 METADATA = 'METADATA.pb'
 ZIPTYPE = '.zip'
@@ -67,7 +66,7 @@ def parse_metadata(metadata_path, filename):
     return metadata
 
 
-def collectfonts(source_directory, destination_converted_files):
+def collectfonts(source_directory):
     """Goes through source directory and all subdirectories
     and writes a json file with all the font information.
 
@@ -75,8 +74,6 @@ def collectfonts(source_directory, destination_converted_files):
         source_directory (String): Relative path to source directory,
                 font files must be in subdirectories. JSON file will be
                 written to this directory.
-        destination_converted_files (String): Path to the directory where
-                the converted files will be saved.
     """
 
     file_counter = 0
@@ -86,14 +83,9 @@ def collectfonts(source_directory, destination_converted_files):
 
     fonts_metadata = {}
 
-
-
     # Go through hierarchy and unzip all zip files
     print("Unpacking all zip files...")
     search_zips(source_directory)
-
-    print("Converting all OTF files to TTF...")
-    run_ttf_converter(source_directory, destination_converted_files)
 
     # Search all folders and subfolders in source directory
     print("Collecting fonts...")
@@ -161,11 +153,3 @@ def unpack(file_path, extract_to):
     """
     with zipfile.ZipFile(file_path, 'r') as zip_ref:
         zip_ref.extractall(extract_to)
-
-
-def run_ttf_converter(input_dir, output_dir):
-    script_path = "path/to/ttf-converter.py"
-
-    command = ["python", script_path, "--input-dir", input_dir, "--output-dir", output_dir]
-
-    subprocess.run(command, check=True)

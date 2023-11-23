@@ -78,13 +78,13 @@ def get_github_db(path_target, db_name, repo_url, directory_list=None, private=F
     # Check if a remote repository exists
     # if not, add it
     existing_remotes = subprocess.check_output(
-         ['git', 'remote'], cwd=path_db).decode().split()
+        ['git', 'remote'], cwd=path_db).decode().split()
     if 'origin' not in existing_remotes:
         print("Füge Remote hinzu")
         subprocess.run(['git', 'remote', 'add', '-f', 'origin', repo_url],
-                        cwd=path_db,
-                        check=True,
-                        env=env)
+                       cwd=path_db,
+                       check=True,
+                       env=env)
 
     # Debugging:
     # existing_remotes = subprocess.check_output(
@@ -171,7 +171,7 @@ def extract_urls(path_glyphazzn, filename, path_target):
 
     input_file_path = os.path.join(path_glyphazzn, filename)
     out_file_path = os.path.join(path_target, filename[:-8] + '.txt')
-    
+
     if not os.path.exists(path_target):
         os.makedirs(path_target)
 
@@ -274,7 +274,7 @@ def download_from_list(url_list, path_target):
 
                 else:
                     pass  # print(f"URL not reachable: {url}")
-            except FileNotFoundError: #Exception as e:
+            except FileNotFoundError:  # Exception as e:
                 pass  # print(f"Error processing {url}: {e}")
 
         print(f"Downloaded {files_downloaded} of {len(url_list)} files.")
