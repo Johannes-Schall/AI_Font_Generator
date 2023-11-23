@@ -172,6 +172,8 @@ def extract_urls(path_glyphazzn, filename, path_target):
 
     input_file_path = os.path.join(path_glyphazzn, filename)
     out_file_path = os.path.join(path_target, filename[:-8] + '.txt')
+    if not os.path.exists(path_target):
+        os.makedirs(path_target)
 
     # Regex zum Finden von URLs
     url_regex = r'https?://\S+'
