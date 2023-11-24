@@ -63,7 +63,8 @@ def render_fonts(font_file_paths: list,
 def plot_glyphs(font_file_paths,
                 size: int=64,
                 chars: str="Äß",
-                figsize=(20, 20)):
+                figsize=(20, 20),
+                show_index: bool=False):
     """
     Plots the same glyphs of different fonts.
 
@@ -90,5 +91,7 @@ def plot_glyphs(font_file_paths,
             #turing the axis ticks off
             ax[idx // size_port_grid, idx % size_port_grid].set_xticks([])
             ax[idx // size_port_grid, idx % size_port_grid].set_yticks([])
+            if show_index:
+                ax[idx // size_port_grid, idx % size_port_grid].set_title(idx)
 
         plt.show()
