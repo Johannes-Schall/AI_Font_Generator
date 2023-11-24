@@ -2,6 +2,8 @@ import os
 import shutil
 from tqdm import tqdm
 from fontTools import ttLib
+import src.data.datarenderer as datarenderer
+import numpy as np
 
 def has_not_all_chars(font: ttLib.TTFont, chars_to_check: str, *args, **kwargs):
     # chars_in_font = {chr(c) for c in font['cmap'].tables[1].cmap.keys()}
@@ -10,26 +12,27 @@ def has_not_all_chars(font: ttLib.TTFont, chars_to_check: str, *args, **kwargs):
     except OverflowError:
         # This happens when the cmap is too large
         # OverflowError: Python int too large to convert to C int
+        # TODO: Clarify if this is a problem futher down the line. Can this be fixed without excluding the font?
         print(f"OverflowError: Python int too large to convert to C int")
         return True
     chars_to_check = {c for c in chars_to_check}
     return not chars_to_check.issubset(chars_in_font)
 
-def has_empty_glyphs(font: ttLib.TTFont, chars_to_check: str = None, *args, **kwargs):
+def has_empty_glyphs(font_file_path, chars_to_check: str = None, *args, **kwargs):
     if chars_to_check is None:
+        font = ttLib.TTFont(font_file_path)
         chars_to_check = {chr(c) for c in font['cmap'].getBestCmap().keys()}
 
-    for char in chars_to_check:
-        #print(char)
-        try:
-            glyph = font['glyf'].glyphs[font['cmap'].getBestCmap()[ord(char)]]
-        except KeyError:
-            # Handling KeyError: 'glyph00252'
-            # TODO: Understand why this happens
-            return True
-        if glyph_is_empty(glyph):
-            return True
-    return False
+    try:
+        glyph_array = datarenderer.render_font(font_file_path, 
+                                            chars=chars_to_check, 
+                                            size=2, 
+                                            normalize=True)
+        glyph_array = 1. - glyph_array
+        empty_entries = (np.sum(glyph_array, axis=(0, 1)) == 0)
+        return np.any(empty_entries)
+    except:
+        return True
 
 def glyph_is_empty(glyph):
     return not hasattr(glyph, 'data')
@@ -75,18 +78,24 @@ def cmap_is_corrupted(font, *args, **kwargs):
         return True
     
 def no_good_cmap(font, *args, **kwargs):
-    return font['cmap'].getBestCmap() is None
+    try:
+        cmap = font['cmap'].getBestCmap()
+    except:
+        return True
+    return cmap is None
 
 def filter_fonts(font_files_path, 
                processed_fonts_path=None,
                required_chars="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789ÄäÖöÜüß",
-               filter_funcs=[has_no_glyf, 
-                             glyf_is_corrupted, 
+               filter_funcs=[
+                             #has_no_glyf, 
+                             #glyf_is_corrupted, 
                              cmap_is_corrupted, 
                              no_good_cmap, 
                              has_not_all_chars, 
                              has_empty_glyphs, 
-                             out_of_bounds]):
+                             out_of_bounds
+                             ]):
     if processed_fonts_path is None:
         processed_fonts_path = os.join(font_files_path, 'processed')
     os.makedirs(processed_fonts_path, exist_ok=True)
@@ -121,7 +130,9 @@ def filter_fonts(font_files_path,
             else:
                 font = ttLib.TTFont(font_file_path)
 
-            kwargs = {'chars_to_check': required_chars, 'font': font}
+            kwargs = {'chars_to_check': required_chars, 
+                      'font': font,
+                      'font_file_path': font_file_path}
 
             filtered = False
             for func in filter_funcs:
