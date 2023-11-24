@@ -2,7 +2,7 @@
 import json
 
 
-def load_db(path_to_json):
+def font_file_list(path_to_json):
     """ Loads font database from json file.
 
     Args:
@@ -17,7 +17,7 @@ def load_db(path_to_json):
     # Extract paths of all used fonts
     paths_list = []
     for entry in data.values():
-        if entry["used"]:
+        if entry["usable"]:
             paths_list.append(entry["path"])
     return paths_list
 
@@ -35,7 +35,7 @@ def write_filter_results(path_font_db_json, filter_dictionary):
     for db_font_data in font_db.values():
         for filter_font_path, value in filter_dictionary.items():
             if filter_font_path == db_font_data["path"]:
-                db_font_data["filter_results"] = value
+                db_font_data["usable"] = value
                 break
 
     with open(path_font_db_json, 'w', encoding='utf-8') as file:
