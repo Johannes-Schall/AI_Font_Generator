@@ -101,7 +101,9 @@ def collectfonts(source_directory):
                 if file.lower()[:-4] not in fonts_metadata:
                     filepath = os.path.join(root, file)
                     normalized_filepath = os.path.normpath(filepath)
-                    font_info = {'path': normalized_filepath, 'used': True}
+                    # Write general info about font to dict/later json
+                    font_info = {'path': normalized_filepath,
+                                 'usable': True}
 
                     file_usable += 1
 

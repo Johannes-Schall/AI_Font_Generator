@@ -1,8 +1,8 @@
 import os
-import shutil
+import json
 from tqdm import tqdm
 from fontTools import ttLib
-import src.data.datarenderer as datarenderer
+from . import datarenderer, fontdb_handler
 import numpy as np
 
 
@@ -94,9 +94,8 @@ def no_good_cmap(font, *args, **kwargs):
     return cmap is None
 
 
-def filter_fonts(font_files_path=None,
-                 path_to_json=None,
-                 processed_fonts_path=None,
+def filter_fonts(path_raw_dir,
+                 path_font_db_json,
                  required_chars="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789ÄäÖöÜüß",
                  filter_funcs=[
                                 # has_no_glyf,
@@ -107,44 +106,53 @@ def filter_fonts(font_files_path=None,
                                 has_empty_glyphs,
                                 out_of_bounds
                  ]):
+    """ Filters fonts in json font database and writes a log file with the results.
 
-    if processed_fonts_path is None:
-        processed_fonts_path = os.path.join(font_files_path, 'processed')
-    os.makedirs(processed_fonts_path, exist_ok=True)
+    Args:
+        path_raw_dir (String): Path to directory with raw data.
+        path_font_db_json (String): Path to the font database json file.
+        required_chars (str, optional): Characterset that is required for font to be considered complete. Defaults to "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789ÄäÖöÜüß".
+        filter_funcs (list, optional): List of filters that are getting applied to fonts. Defaults to [ cmap_is_corrupted, no_good_cmap, has_not_all_chars, has_empty_glyphs, out_of_bounds ].
 
-    if font_files_path is None:
-        # TODO: json loader here
-        pass
-    else:
-        files = os.listdir(font_files_path)
-    # only font files with ttf or otf or pfb extension
-    font_files = [file for file in files if file.endswith(('.ttf', '.otf'))]
+    Returns:
+        Dictionary: Returns dictionary with filter results.
+    """
+    
+    with open(path_font_db_json, 'r', encoding='utf-8') as file:
+        font_db = json.load(file)
+    
+    # Result of filtering is stored in a dictionary. At the end of this function,
+    # this dictionary is written to the json font database.    
+    filter_dictionary = {}
+    
+
+    font_files_pathes = [font_db[font]['path'] for font in font_db.keys()]
 
     filter_counter_dict = {}
-    filter_counter_dict['num_font_files_processed'] = len(font_files)
+    filter_counter_dict['num_font_files_processed'] = len(font_files_pathes)
     filter_counter_dict['num_usable_fonts'] = 0
 
     # Writing a log file
     num_log_file = 0
     log_file_name = f'log_filter_fonts{num_log_file}.txt'
-    while os.path.exists(os.path.join(font_files_path, log_file_name)):
+    while os.path.exists(os.path.join(path_raw_dir, log_file_name)):
         num_log_file += 1
         log_file_name = f'log_filter_fonts{num_log_file}.txt'
 
-    with open(os.path.join(font_files_path, log_file_name), 'a') as log_file:
+    with open(os.path.join(path_raw_dir, log_file_name), 'a', encoding='utf-8') as log_file:
 
-        for idx, font_file in tqdm(enumerate(font_files)):
-            font_file_path = os.path.join(font_files_path, font_file)
-            # print(font_file_path)
+        for idx, font_file_path in tqdm(enumerate(font_files_pathes)):
 
-            log_file.write(f"{idx},{font_file},")
+            log_file.write(f"{idx},{font_file_path},")
             # Checking for common errors and exclude the font if it has one
             # Check if file is corrupted
             if font_file_is_corrupted(font_file_path):
                 log_file.write("EXCLUDED, corrupted file\n")
+                filter_dictionary[font_file_path] = False
                 continue
 
             font = ttLib.TTFont(font_file_path)
+
 
             kwargs = {'chars_to_check': required_chars,
                       'font': font,
@@ -157,6 +165,7 @@ def filter_fonts(font_files_path=None,
                     filter_counter_dict[func.__name__] = filter_counter_dict.get(
                         func.__name__, 0) + 1
                     filtered = True
+                    filter_dictionary[font_file_path] = False
                     break
             if filtered:
                 continue
@@ -164,17 +173,13 @@ def filter_fonts(font_files_path=None,
             log_file.write("INCLUDED\n")
             filter_counter_dict['num_usable_fonts'] = filter_counter_dict['num_usable_fonts'] + 1
 
-            processed_file_path = os.path.join(processed_fonts_path, font_file)
-            # if file exists, remove it
-            if os.path.exists(processed_file_path):
-                os.remove(processed_file_path)
-            # Move the new file
-            shutil.move(font_file_path, processed_fonts_path)
-
         log_file.write("\n\nFilter results:\n")
         for key, value in filter_counter_dict.items():
             log_file.write(f"{key}: {value}\n")
+            
+        # Write filter results to json font database
+        fontdb_handler.write_filter_results(path_font_db_json, filter_dictionary)
 
     print(
-        f"Processed {idx+1} fonts. Found {filter_counter_dict['num_usable_fonts']} usable fonts and moved them to {processed_fonts_path}.")
+        f"Processed {idx+1} fonts. Found {filter_counter_dict['num_usable_fonts']} usable fonts.")
     return filter_counter_dict
