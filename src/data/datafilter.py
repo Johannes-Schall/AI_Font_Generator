@@ -84,23 +84,30 @@ def no_good_cmap(font, *args, **kwargs):
         return True
     return cmap is None
 
-def filter_fonts(font_files_path, 
-               processed_fonts_path=None,
-               required_chars="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789ÄäÖöÜüß",
-               filter_funcs=[
-                             #has_no_glyf, 
-                             #glyf_is_corrupted, 
-                             cmap_is_corrupted, 
-                             no_good_cmap, 
-                             has_not_all_chars, 
-                             has_empty_glyphs, 
-                             out_of_bounds
-                             ]):
+def filter_fonts(font_files_path = None,
+                 path_to_json = None, 
+                 processed_fonts_path=None,
+                 required_chars="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789ÄäÖöÜüß",
+                 filter_funcs=[
+                                #has_no_glyf, 
+                                #glyf_is_corrupted, 
+                                cmap_is_corrupted, 
+                                no_good_cmap, 
+                                has_not_all_chars, 
+                                has_empty_glyphs, 
+                                out_of_bounds
+                                ]):
+    
     if processed_fonts_path is None:
-        processed_fonts_path = os.join(font_files_path, 'processed')
+        processed_fonts_path = os.path.join(font_files_path, 'processed')
     os.makedirs(processed_fonts_path, exist_ok=True)
     
-    files = os.listdir(font_files_path)
+    
+    if font_files_path is None:
+        # TODO: json loader here
+        pass
+    else:
+        files = os.listdir(font_files_path)
     # only font files with ttf or otf or pfb extension
     font_files = [file for file in files if file.endswith(('.ttf', '.otf'))]
 
