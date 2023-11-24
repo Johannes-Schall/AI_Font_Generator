@@ -7,7 +7,8 @@ import matplotlib.pyplot as plt
 def render_font(font_path, 
                 size: int, 
                 chars: str="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789ÄäÖöÜüß",
-                normalize: bool=False):
+                normalize: bool=False,
+                invert: bool=False):
     """
     Renders glyphs of a font as a numpy array.
 
@@ -35,13 +36,19 @@ def render_font(font_path,
 
     if normalize:
         arrays = arrays / 255.
+    if invert:
+        if normalize:
+            arrays = 1. - arrays
+        else:
+            arrays = 255 - arrays
 
     return arrays
 
 def render_fonts(font_file_paths: list,
                  size: int=64,
                  chars: str="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789ÄäÖöÜüß",
-                 normalize: bool=False):
+                 normalize: bool=False,
+                 invert: bool=False):
     """
     Renders glyphs of multiple fonts as a numpy array.
     
@@ -57,7 +64,7 @@ def render_fonts(font_file_paths: list,
     # reserve memory for the arrays
     arrays = np.empty((len(font_file_paths), size, size, len(chars)))
     for idx, font_file_path in enumerate(font_file_paths):
-        arrays[idx, :, :, :] = render_font(font_file_path, size, chars, normalize)
+        arrays[idx, :, :, :] = render_font(font_file_path, size, chars, normalize, invert)
     return arrays
 
 def plot_glyphs(font_file_paths,
