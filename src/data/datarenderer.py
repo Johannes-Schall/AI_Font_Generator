@@ -8,7 +8,8 @@ def render_font(font_path,
                 size: int, 
                 chars: str="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789ÄäÖöÜüß",
                 normalize: bool=False,
-                invert: bool=False):
+                invert: bool=False,
+                dtype=np.float16):
     """
     Renders glyphs of a font as a numpy array.
 
@@ -42,13 +43,14 @@ def render_font(font_path,
         else:
             arrays = 255 - arrays
 
-    return arrays
+    return arrays.astype(dtype)
 
 def render_fonts(font_file_paths: list,
                  size: int=64,
                  chars: str="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789ÄäÖöÜüß",
                  normalize: bool=False,
-                 invert: bool=False):
+                 invert: bool=False,
+                 dtype=np.float16):
     """
     Renders glyphs of multiple fonts as a numpy array.
     
@@ -62,9 +64,9 @@ def render_fonts(font_file_paths: list,
         np.array: Array of shape (len(font_file_paths), size, size, len(chars))
     """
     # reserve memory for the arrays
-    arrays = np.empty((len(font_file_paths), size, size, len(chars)))
+    arrays = np.empty((len(font_file_paths), size, size, len(chars))).astype(dtype)
     for idx, font_file_path in enumerate(font_file_paths):
-        arrays[idx, :, :, :] = render_font(font_file_path, size, chars, normalize, invert)
+        arrays[idx, :, :, :] = render_font(font_file_path, size, chars, normalize, invert, dtype)
     return arrays
 
 def plot_glyphs(font_file_paths,
