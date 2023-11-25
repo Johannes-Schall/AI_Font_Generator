@@ -1,0 +1,72 @@
+Model: "auto_encoder_7"
+_________________________________________________________________
+ Layer (type)                Output Shape              Param #   
+=================================================================
+ conv2d_42 (Conv2D)          (None, 64, 64, 32)        2624      
+                                                                 
+ max_pooling2d_21 (MaxPooli  (None, 32, 32, 32)        0         
+ ng2D)                                                           
+                                                                 
+ conv2d_43 (Conv2D)          (None, 32, 32, 64)        18496     
+                                                                 
+ max_pooling2d_22 (MaxPooli  (None, 16, 16, 64)        0         
+ ng2D)                                                           
+                                                                 
+ dropout_29 (Dropout)        multiple                  0 (unused)
+                                                                 
+ conv2d_44 (Conv2D)          (None, 16, 16, 128)       73856     
+                                                                 
+ max_pooling2d_23 (MaxPooli  (None, 8, 8, 128)         0         
+ ng2D)                                                           
+                                                                 
+ flatten_7 (Flatten)         (None, 8192)              0         
+                                                                 
+ dropout_30 (Dropout)        multiple                  0 (unused)
+                                                                 
+ dense_21 (Dense)            (None, 512)               4194816   
+                                                                 
+ dropout_31 (Dropout)        multiple                  0 (unused)
+                                                                 
+ dense_22 (Dense)            (None, 128)               65664     
+                                                                 
+ dropout_32 (Dropout)        multiple                  0 (unused)
+                                                                 
+ dense_23 (Dense)            (None, 512)               66048     
+                                                                 
+ reshape_7 (Reshape)         (None, 4, 4, 32)          0         
+                                                                 
+ up_sampling2d_21 (UpSampli  (None, 8, 8, 32)          0         
+ ng2D)                                                           
+                                                                 
+ conv2d_45 (Conv2D)          (None, 8, 8, 128)         36992     
+                                                                 
+ dropout_33 (Dropout)        multiple                  0 (unused)
+                                                                 
+ up_sampling2d_22 (UpSampli  (None, 16, 16, 128)       0         
+ ng2D)                                                           
+                                                                 
+ conv2d_46 (Conv2D)          (None, 16, 16, 64)        73792     
+                                                                 
+ dropout_34 (Dropout)        multiple                  0 (unused)
+                                                                 
+ up_sampling2d_23 (UpSampli  (None, 32, 32, 64)        0         
+ ng2D)                                                           
+                                                                 
+ conv2d_47 (Conv2D)          (None, 32, 32, 32)        18464     
+                                                                 
+ conv2d_transpose_7 (Conv2D  (None, 64, 64, 7)         2023      
+ Transpose)                                                      
+                                                                 
+=================================================================
+Total params: 4552775 (17.37 MB)
+Trainable params: 4552775 (17.37 MB)
+Non-trainable params: 0 (0.00 Byte)
+_________________________________________________________________
+
+charset_in: AaOoUu8Bj
+charset_out: ÄäÖöÜüß
+box_size: 64
+test_size: 0.1
+batch_size: 32
+training_loss: [0.03145255893468857, 0.024040475487709045, 0.022034138441085815, 0.020785262808203697, 0.020039958879351616, 0.01942930743098259, 0.01897669956088066, 0.018529148772358894, 0.018220145255327225, 0.01787572354078293]
+validation_loss: [0.02648080140352249, 0.02364850789308548, 0.021894769743084908, 0.021356932818889618, 0.02068602479994297, 0.020098702982068062, 0.01966635324060917, 0.01949870027601719, 0.01920328475534916, 0.019050471484661102]
