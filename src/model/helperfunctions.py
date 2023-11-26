@@ -62,24 +62,44 @@ def render_predictions(model, dataset_test, num_examples=4, figsize=(10, 10), bl
         return fig, axs
 
 def render_histories(trainings_list, show_plot=True):
+    if all(["val_loss" in training["history"].history for training in trainings_list]):
+        val_loss_available = True
+    else:
+        val_loss_available = False
+
     if len(trainings_list) > 1:
-        fig, axs = plt.subplots(1, 2, figsize=(15, 5))
+        if val_loss_available:
+            fig, axs = plt.subplots(1, 2, figsize=(15, 5))
+        else:
+            fig, axs = plt.subplots(1, 1, figsize=(5, 5))
+
         for idx, training in enumerate(trainings_list):
-            axs[0].plot(training["history"].history["loss"], label=f"Training {idx}")
-            axs[1].plot(training["history"].history["val_loss"], label=f"Training {idx}")
-        axs[0].set_title("Training loss")
-        axs[0].set_xlabel("Epoch")
-        axs[0].set_ylabel("Loss")
-        axs[0].legend()
-        axs[1].set_title("Validation loss")
-        axs[1].set_xlabel("Epoch")
-        axs[1].set_ylabel("Loss")
-        axs[1].legend()
+            if val_loss_available:
+                axs[0].plot(training["history"].history["loss"], label=f"Training {idx}")
+                axs[1].plot(training["history"].history["val_loss"], label=f"Training {idx}")
+                axs[0].set_title("Training loss")
+                axs[0].set_xlabel("Epoch")
+                axs[0].set_ylabel("Loss")
+                axs[0].legend()
+                axs[1].set_title("Validation loss")
+                axs[1].set_xlabel("Epoch")
+                axs[1].set_ylabel("Loss")
+                axs[1].legend()
+            else:
+                axs.plot(training["history"].history["loss"], label=f"Training {idx}")
+                axs.set_title("Training loss")
+                axs.set_xlabel("Epoch")
+                axs.set_ylabel("Loss")
+                axs.legend()
+        
     else:
         fig, axs = plt.subplots(1, 1, figsize=(5, 5))
         axs.plot(trainings_list[0]["history"].history["loss"], label=f"Training Loss")
-        axs.plot(trainings_list[0]["history"].history["val_loss"], label=f"Validation Loss")
-        axs.set_title("Training and validation loss")
+        if val_loss_available:
+            axs.plot(trainings_list[0]["history"].history["val_loss"], label=f"Validation Loss")
+            axs.set_title("Training and validation loss")
+        else:
+            axs.set_title("Training loss")
         axs.set_xlabel("Epoch")
         axs.set_ylabel("Loss")
         axs.legend()
@@ -90,7 +110,12 @@ def render_histories(trainings_list, show_plot=True):
         return fig, axs
 
 def analyze_trainings(trainings_list):
-    metric_compare = "val_loss"
+    # if in the history of the trainings there is a validation loss, we use this for comparison
+    if all(["val_loss" in training["history"].history for training in trainings_list]):
+        metric_compare = "val_loss"
+    else:
+        metric_compare = "loss"
+
     if len(trainings_list) < 2:
         idx_best_training = 0
     else:
@@ -135,12 +160,19 @@ def save_summary_last_training(trainings_list, dataset_test, save_path_summary, 
         dataset_test (tf.data.Dataset): test dataset
         save_path_model (String, optional): path where the model should be saved. Default None: model is not saved.
     """
+    if "val_loss" in trainings_list[-1]["history"].history:
+        val_loss_available = True
+    else:
+        val_loss_available = False
     
     # Prefix for the file names will be the date and time in the format YYYYMMDD_HHMMSS
     prefix = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
     # and addionally the best validation loss and training loss during the last training
-    prefix += f"_val_loss_{np.min(trainings_list[-1]['history'].history['val_loss']):.4f}_train_loss_{np.min(trainings_list[-1]['history'].history['loss']):.4f}"
-    
+    if val_loss_available:
+        prefix += f"_val_loss_{np.min(trainings_list[-1]['history'].history['val_loss']):.4f}_train_loss_{np.min(trainings_list[-1]['history'].history['loss']):.4f}"
+    else:
+        prefix += f"_train_loss_{np.min(trainings_list[-1]['history'].history['loss']):.4f}"
+
     if not os.path.exists(save_path_summary):
         os.makedirs(save_path_summary)
 
@@ -154,7 +186,8 @@ def save_summary_last_training(trainings_list, dataset_test, save_path_summary, 
                 f.write(f"{key}: {value}\n")
         # addionally the lists of the training and validation loss
         f.write(f"training_loss: {trainings_list[-1]['history'].history['loss']}\n")
-        f.write(f"validation_loss: {trainings_list[-1]['history'].history['val_loss']}\n")
+        if val_loss_available:
+            f.write(f"validation_loss: {trainings_list[-1]['history'].history['val_loss']}\n")
 
     # Saving the plot of the training and validation loss
     fig, axs = render_histories([trainings_list[-1]], show_plot=False)
