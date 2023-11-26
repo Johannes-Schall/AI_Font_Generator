@@ -143,12 +143,14 @@ def filter_fonts(path_raw_dir,
 
         for idx, font_file_path in tqdm(enumerate(font_files_pathes)):
 
+            filter_detail_dictionary = {}
             log_file.write(f"{idx},{font_file_path},")
             # Checking for common errors and exclude the font if it has one
             # Check if file is corrupted
             if font_file_is_corrupted(font_file_path):
                 log_file.write("EXCLUDED, corrupted file\n")
                 filter_dictionary[font_file_path] = False
+                filter_detail_dictionary['font_file_is_corrupted'] = True
                 continue
 
             font = ttLib.TTFont(font_file_path)
@@ -166,7 +168,32 @@ def filter_fonts(path_raw_dir,
                         func.__name__, 0) + 1
                     filtered = True
                     filter_dictionary[font_file_path] = False
-                    break
+                    filter_detail_dictionary[func.__name__] = True
+
+                    if filtered and func.__name__ == 'has_not_all_chars':
+                        try:
+                            chars_in_font = {chr(c) for c in font['cmap'].getBestCmap().keys()}
+                            chars_missing = [c for c in required_chars if c not in chars_in_font]
+                            # Carful: Here are only missing chars that we checked for. There might be more missing chars.
+                            # A cmap can include 1000s of chars from different languages.
+                            filter_detail_dictionary['chars_not_in_font_cmap'] = chars_missing
+                        except OverflowError:
+                            # TODO: Clarify if this is a problem futher down the line. Can this be fixed without excluding the font?
+                            filter_detail_dictionary['font_file_is_corrupted'] = True
+                    if filtered and func.__name__ == 'has_empty_glyphs':
+                        try:
+                            glyph_array = datarenderer.render_font(font_file_path,
+                                                                   chars=required_chars,
+                                                                   size=2,
+                                                                   normalize=True)
+                            glyph_array = 1. - glyph_array
+                            empty_entries = (np.sum(glyph_array, axis=(0, 1)) == 0)
+                            empty_chars = [c for i, c in enumerate(required_chars) if empty_entries[i]]
+                            filter_detail_dictionary['chars_with_empty_glyphs'] = empty_chars
+                        except:
+                            filter_detail_dictionary['font_file_is_corrupted'] = True
+                else:
+                    filter_detail_dictionary[func.__name__] = False
             if filtered:
                 continue
 
