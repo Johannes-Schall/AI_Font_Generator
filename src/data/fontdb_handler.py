@@ -35,7 +35,7 @@ def write_filter_results(path_font_db_json, filter_dictionary):
     for db_font_data in font_db.values():
         for filter_font_path, value in filter_dictionary.items():
             if filter_font_path == db_font_data["path"]:
-                db_font_data["usable"] = value
+                db_font_data.update(value)
                 break
 
     with open(path_font_db_json, 'w', encoding='utf-8') as file:
