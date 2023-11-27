@@ -60,20 +60,9 @@ def out_of_bounds(font, bounds=(-0.4, -0.4, 1.8, 1.3), *args, **kwargs):
 def font_file_is_corrupted(font_file_path, *args, **kwargs):
     try:
         font = ttLib.TTFont(font_file_path)
-        return False
-    except:
-        return True
-
-
-def has_no_glyf(font, *args, **kwargs):
-    # TODO: Understand fonts without key "glyf" and possibly include them
-    return 'glyf' not in font.keys()
-
-
-def glyf_is_corrupted(font, *args, **kwargs):
-    try:
-        _ = font['glyf']
-        return False
+        _ = font['cmap']
+        cmap = font['cmap'].getBestCmap() # cmap is None if cmap is corrupted? Maybe a little picky, but ok for now.
+        return cmap is None
     except:
         return True
 
@@ -98,10 +87,8 @@ def filter_fonts(path_raw_dir,
                  path_font_db_json,
                  required_chars="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789ÄäÖöÜüß",
                  filter_funcs=[
-                                # has_no_glyf,
-                                # glyf_is_corrupted,
-                                cmap_is_corrupted,
-                                no_good_cmap,
+                                #cmap_is_corrupted,
+                                #no_good_cmap,
                                 has_not_all_chars,
                                 has_empty_glyphs,
                                 out_of_bounds
@@ -149,6 +136,8 @@ def filter_fonts(path_raw_dir,
             # Check if file is corrupted
             if font_file_is_corrupted(font_file_path):
                 log_file.write("EXCLUDED, corrupted file\n")
+                filter_counter_dict['corrupted_file'] = filter_counter_dict.get(
+                    'corrupted_file', 0) + 1
                 filter_detail_dictionary["usable"] = False
                 filter_detail_dictionary.setdefault(
                         "filters", []).append("corrputed")
