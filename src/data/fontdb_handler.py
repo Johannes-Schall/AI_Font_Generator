@@ -29,6 +29,7 @@ def write_filter_results(path_font_db_json, filter_dictionary):
         path_font_db_json (String): Path to the font database json file.
         filter_dictionary (Dictionary): Dictionary with filter results.
     """
+
     with open(path_font_db_json, 'r', encoding='utf-8') as file:
         font_db = json.load(file)
 

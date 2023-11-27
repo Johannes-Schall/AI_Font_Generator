@@ -130,7 +130,6 @@ def filter_fonts(path_raw_dir,
 
         for idx, font_file_path in tqdm(enumerate(font_files_pathes)):
 
-            filter_detail_dictionary = {}
             log_file.write(f"{idx},{font_file_path},")
             # Checking for common errors and exclude the font if it has one
             # Check if file is corrupted
@@ -138,9 +137,13 @@ def filter_fonts(path_raw_dir,
                 log_file.write("EXCLUDED, corrupted file\n")
                 filter_counter_dict['corrupted_file'] = filter_counter_dict.get(
                     'corrupted_file', 0) + 1
-                filter_detail_dictionary["usable"] = False
-                filter_detail_dictionary.setdefault(
-                        "filters", []).append("corrputed")
+                
+                if font_file_path not in filter_dictionary:
+                    filter_dictionary[font_file_path] = {}
+                filter_dictionary[font_file_path].setdefault(
+                    "usable", False)
+                filter_dictionary[font_file_path].setdefault(
+                        "filters", []).append("corrupted")
                 continue
 
             font = ttLib.TTFont(font_file_path)
@@ -157,22 +160,34 @@ def filter_fonts(path_raw_dir,
                     filter_counter_dict[func.__name__] = filter_counter_dict.get(
                         func.__name__, 0) + 1
                     filtered = True
-                    filter_detail_dictionary["usable"] = False
-                    filter_detail_dictionary.setdefault(
+                    
+                    if font_file_path not in filter_dictionary:
+                        filter_dictionary[font_file_path] = {}
+                    
+                    filter_dictionary[font_file_path].setdefault(
+                        "usable", False)
+                    filter_dictionary[font_file_path].setdefault(
                         "filters", []).append(str(func.__name__))
 
                     if filtered and func.__name__ == 'has_not_all_chars':
+                        if font_file_path not in filter_dictionary:
+                            filter_dictionary[font_file_path] = {}
+                        
                         try:
                             chars_in_font = {chr(c) for c in font['cmap'].getBestCmap().keys()}
                             chars_missing = [c for c in required_chars if c not in chars_in_font]
                             # Carful: Here are only missing chars that we checked for. There might be more missing chars.
-                            # A cmap can include 1000s of chars from different languages.
-                            filter_detail_dictionary['chars_not_in_font_cmap'] = chars_missing
+                            # A cmap can include 1000s of chars from different languages.   
+                            filter_dictionary[font_file_path].setdefault('chars_not_in_font_cmap', chars_missing)
                         except OverflowError:
                             # TODO: Clarify if this is a problem futher down the line. Can this be fixed without excluding the font?
-                            filter_detail_dictionary.setdefault(
+                            filter_dictionary[font_file_path].setdefault(
                                 "filters", []).append("Not all chars: OverflowError")
                     if filtered and func.__name__ == 'has_empty_glyphs':
+                        if font_file_path not in filter_dictionary:
+                            filter_dictionary[font_file_path] = {}                        
+                        
+                        
                         try:
                             glyph_array = datarenderer.render_font(font_file_path,
                                                                    chars=required_chars,
@@ -181,10 +196,9 @@ def filter_fonts(path_raw_dir,
                             glyph_array = 1. - glyph_array
                             empty_entries = (np.sum(glyph_array, axis=(0, 1)) == 0)
                             empty_chars = [c for i, c in enumerate(required_chars) if empty_entries[i]]
-                            filter_detail_dictionary['chars_with_empty_glyphs'] = empty_chars
+                            filter_dictionary[font_file_path].setdefault('chars_with_empty_glyphs', empty_chars)
                         except:
-                            filter_detail_dictionary.setdefault(
-                                "filters", []).append("Empty glyphs: Exception")
+                            filter_dictionary[font_file_path].setdefault("filters", []).append("Empty glyphs: Exception")
                 # else:
                 #     filter_detail_dictionary[func.__name__] = False
             if filtered:
@@ -192,8 +206,6 @@ def filter_fonts(path_raw_dir,
 
             log_file.write("INCLUDED\n")
             filter_counter_dict['num_usable_fonts'] = filter_counter_dict['num_usable_fonts'] + 1
-
-            filter_dictionary[font_file_path] = filter_detail_dictionary
             
         log_file.write("\n\nFilter results:\n")
         for key, value in filter_counter_dict.items():
