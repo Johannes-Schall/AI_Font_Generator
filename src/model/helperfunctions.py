@@ -19,43 +19,86 @@ def render_charset(charset):
         axs[idx].set_yticks([])
     plt.show()
 
-def render_predictions(model, dataset_test, num_examples=4, figsize=(10, 10), black_white=False, show_plot=True):
-    # function to plot the images: input, target and prediction
+def render_predictions(model, dataset_test, num_examples=4, figsize=(10, 10), 
+                       black_white=False, show_plot=True, model_type="3dTensor-3dTensor"):
+    """
+    Renders the predictions of a model on the test dataset.
+
+    Args:
+        model (tf.keras.Model): Model to render the predictions for
+        dataset_test (tf.data.Dataset): Test dataset
+        num_examples (int, optional): Number of examples to render. Defaults to 4.
+        figsize (tuple, optional): Size of the figure. Defaults to (10, 10).
+        black_white (bool, optional): Render the predictions in high contrast. Defaults to False.
+        show_plot (bool, optional): Show the plot. Defaults to True.
+
+    Returns:
+        None if show_plot is True, else (fig, axs)
+
+    """
     if num_examples < 2:
         raise ValueError("num_examples must be at least 2")
     
-    x_val, y_val = next(iter(dataset_test))
-    
-    num_glyphs_x = x_val.shape[3]
-    num_glyphs_y = y_val.shape[3]
+    if model_type == "3dTensor-3dTensor":
+        x_val, y_val = next(iter(dataset_test))
+        
+        num_glyphs_x = x_val.shape[3]
+        num_glyphs_y = y_val.shape[3]
 
-    fig, axs = plt.subplots(num_examples, 
-                            num_glyphs_x + num_glyphs_y*2, 
-                            figsize=figsize)
-    for idx in range(num_examples):
-        input_img = x_val[idx, :, :, :]
-        target_img = y_val[idx, :, :, :]
-        prediction = model.predict(input_img[np.newaxis, :, :, :], verbose=0)
-        if black_white:
-            #prediction = np.where(prediction > 0.4, 1, 0)
-            # increasing the contrast of the prediction with a fermi-dirac function
+        fig, axs = plt.subplots(num_examples, 
+                                num_glyphs_x + num_glyphs_y*2, 
+                                figsize=figsize)
+        for idx in range(num_examples):
+            input_img = x_val[idx, :, :, :]
+            target_img = y_val[idx, :, :, :]
+            prediction = model.predict(input_img[np.newaxis, :, :, :], verbose=0)
+            if black_white:
+                #prediction = np.where(prediction > 0.4, 1, 0)
+                # increasing the contrast of the prediction with a fermi-dirac function
+                temp = 0.05
+                prediction = 1 / (1 + np.exp(-(prediction - 0.5)/temp))
+            for idx2 in range(num_glyphs_x):
+                axs[idx, idx2].imshow(input_img[:, :, idx2], cmap="gray")
+                axs[idx, idx2].set_xticks([])
+                axs[idx, idx2].set_yticks([])
+                axs[idx, idx2].set_title("Input")
+            for idx2 in range(num_glyphs_y):
+                axs[idx, num_glyphs_x + idx2].imshow(target_img[:, :, idx2], cmap="gray")
+                axs[idx, num_glyphs_x + idx2].set_xticks([])
+                axs[idx, num_glyphs_x + idx2].set_yticks([])
+                axs[idx, num_glyphs_x + idx2].set_title("Target")
+            for idx2 in range(num_glyphs_y):
+                axs[idx, num_glyphs_x + num_glyphs_y + idx2].imshow(prediction[0, :, :, idx2], cmap="gray")
+                axs[idx, num_glyphs_x + num_glyphs_y + idx2].set_xticks([])
+                axs[idx, num_glyphs_x + num_glyphs_y + idx2].set_yticks([])
+                axs[idx, num_glyphs_x + num_glyphs_y + idx2].set_title("Prediction")
+    elif model_type == "2dGrid-OneHot-SingleGlyph":
+        for input, target in dataset_test.shuffle(1024).take(1):
+            batch_size = input[1].shape[0]
+            images_in = input[0]
+            one_hot_in = input[1]
+            num_predictions_to_plot = num_examples if batch_size > num_examples else batch_size
+            prediction = model.predict(input)
             temp = 0.05
-            prediction = 1 / (1 + np.exp(-(prediction - 0.5)/temp))
-        for idx2 in range(num_glyphs_x):
-            axs[idx, idx2].imshow(input_img[:, :, idx2], cmap="gray")
-            axs[idx, idx2].set_xticks([])
-            axs[idx, idx2].set_yticks([])
-            axs[idx, idx2].set_title("Input")
-        for idx2 in range(num_glyphs_y):
-            axs[idx, num_glyphs_x + idx2].imshow(target_img[:, :, idx2], cmap="gray")
-            axs[idx, num_glyphs_x + idx2].set_xticks([])
-            axs[idx, num_glyphs_x + idx2].set_yticks([])
-            axs[idx, num_glyphs_x + idx2].set_title("Target")
-        for idx2 in range(num_glyphs_y):
-            axs[idx, num_glyphs_x + num_glyphs_y + idx2].imshow(prediction[0, :, :, idx2], cmap="gray")
-            axs[idx, num_glyphs_x + num_glyphs_y + idx2].set_xticks([])
-            axs[idx, num_glyphs_x + num_glyphs_y + idx2].set_yticks([])
-            axs[idx, num_glyphs_x + num_glyphs_y + idx2].set_title("Prediction")
+            prediction_bw = 1 / (1 + np.exp(-(prediction - 0.5)/temp))
+            fig, axs = plt.subplots(num_predictions_to_plot, 4, figsize=(10, 2.5*num_predictions_to_plot))
+            for i in range(num_predictions_to_plot):
+                axs[i, 0].imshow(images_in[i, :, :], cmap='gray')
+                axs[i, 0].set_title("Input")
+                axs[i, 0].set_xticks([])
+                axs[i, 0].set_yticks([])
+                axs[i, 1].imshow(target[i, :, :], cmap='gray')
+                axs[i, 1].set_title(f"Target with One Hot:\n{one_hot_in[i]}")
+                axs[i, 1].set_xticks([])
+                axs[i, 1].set_yticks([])
+                axs[i, 2].imshow(prediction[i, :, :], cmap='gray')
+                axs[i, 2].set_title("Prediction")
+                axs[i, 2].set_xticks([])
+                axs[i, 2].set_yticks([])
+                axs[i, 3].imshow(prediction_bw[i, :, :], cmap='gray')
+                axs[i, 3].set_title("Prediction High Contrast")
+                axs[i, 3].set_xticks([])
+                axs[i, 3].set_yticks([])
     if show_plot:
         plt.show()
     else:
@@ -146,7 +189,9 @@ def analyze_trainings(trainings_list):
     else:
         render_histories([trainings_list[idx_best_training]])
 
-def save_summary_last_training(trainings_list, dataset_test, save_path_summary, save_path_model=None):
+def save_summary_last_training(trainings_list, dataset_test, save_path_summary, 
+                               save_path_model=None, add_prefix="", 
+                               model_type="3dTensor-3dTensor"):
     """
     Saves a collection of possible important information about the last training.
     * the model summary
@@ -167,6 +212,10 @@ def save_summary_last_training(trainings_list, dataset_test, save_path_summary, 
     
     # Prefix for the file names will be the date and time in the format YYYYMMDD_HHMMSS
     prefix = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+    # add the model type
+    prefix += f"_{model_type}"
+    # add the prefix from the function arguments
+    prefix += f"_{add_prefix}"
     # and addionally the best validation loss and training loss during the last training
     if val_loss_available:
         prefix += f"_val_loss_{np.min(trainings_list[-1]['history'].history['val_loss']):.4f}_train_loss_{np.min(trainings_list[-1]['history'].history['loss']):.4f}"
@@ -194,10 +243,12 @@ def save_summary_last_training(trainings_list, dataset_test, save_path_summary, 
     fig.savefig(os.path.join(save_path_summary, f"{prefix}_loss.png"), dpi=300)
 
     # Saving the plot of 10 validation examples with input, target and prediction
-    fig, axs = render_predictions(trainings_list[-1]["history"].model, dataset_test, num_examples=10, figsize=(20, 20), show_plot=False)
+    fig, axs = render_predictions(trainings_list[-1]["history"].model, dataset_test, num_examples=10, figsize=(20, 20), show_plot=False, model_type=model_type)
     fig.savefig(os.path.join(save_path_summary, f"{prefix}_predictions.png"), dpi=300)
-    fig, axs = render_predictions(trainings_list[-1]["history"].model, dataset_test, num_examples=10, figsize=(20, 20), black_white=True, show_plot=False)
+    fig, axs = render_predictions(trainings_list[-1]["history"].model, dataset_test, num_examples=10, figsize=(20, 20), black_white=True, show_plot=False, model_type=model_type)
     fig.savefig(os.path.join(save_path_summary, f"{prefix}_predictions_black_white.png"), dpi=300)
+    #elif model_type == "2dGrid-OneHot-SingleGlyph":
+
 
     if save_path_model is not None:
         if not os.path.exists(save_path_model):

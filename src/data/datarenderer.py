@@ -17,6 +17,9 @@ def render_font(font_path,
         font_path (str): Path to font file (ttf, otf)
         size (int): Size of the image (size x size)
         chars (str, optional): Characters to render. Defaults to "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789ÄäÖöÜüß".
+        normalize (bool, optional): Normalize the array. Defaults to False.
+        invert (bool, optional): Invert the array. Defaults to False.
+        dtype (np.dtype, optional): Data type of the array. Defaults to np.float16.
 
     Returns:
         np.array: Array of shape (size, size, len(chars))
