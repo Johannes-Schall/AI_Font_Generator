@@ -5,22 +5,23 @@ import json
 import re
 from concurrent.futures import ThreadPoolExecutor
 import requests
+from . import global_consts as g
 
 
-DBCONFIG = 'source.json'
+
 GLYZPHAZZN_URL = 'https://storage.googleapis.com/magentadata/models/svg_vae/glyphazzn_urls.txt'
 
 
-def get_font_dbs(db_flags, path_config, path_target):
+def get_font_dbs(db_flags):
     """ Prepare the download of font libraries from github repositories.
 
     Args:
         db_flags (Dictionary): Sets flags to download specific databases
-        path_config (String): Path to the directory holding all configuration files
-        path_target (String): Path to which the font libraries should be downloaded
+        
     """
 
-    database_config = os.path.join(path_config, DBCONFIG)
+    path_target = g.PATH_RAW
+    database_config = os.path.join(g.PATH_DB_CONFIGS, g.DBCONFIG)
 
     # read database config file from json
     with open(database_config, 'r') as infile:
@@ -135,14 +136,12 @@ def get_github_db(path_target, db_name, repo_url, directory_list=None, private=F
         print(f"Error: {e}")
 
 
-def update_glyphazzn_list(path_glyphazzn, path_target):
-    """ Download the latest link list for the glyphazzn dataset.
-
-    Args:
-        path_glyphazzn (String): Path to the directory to store the glyphazzn link list
-        path_target (String): Path to the directory of all link lists
-    """
-
+def update_glyphazzn_list(path_glyphazzn, ):
+    """ Download the latest link list for the glyphazzn dataset."""
+    
+    path_glyphazzn = g.PATH_RAW
+    path_target = g.PATH_URL_LISTS
+    
     # Check if target directory already exists
     if not os.path.isdir(path_glyphazzn):
         os.makedirs(path_glyphazzn)
@@ -199,10 +198,10 @@ def download_files_from_txts(path_source, path_target):
     """ Cycle through all txt files in a directory and queue the
         files for parallel download.
 
-    Args:
-        path_source (String): Path to the directory holding the txt files
-        path_target (String): Path to the target directory
     """
+
+    path_source = g.PATH_URL_LISTS
+    path_target = g.PATH_RAW
 
     for _, _, files in os.walk(path_source):
         for file in files:

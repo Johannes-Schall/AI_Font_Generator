@@ -16,6 +16,7 @@ import os
 import json
 import zipfile
 import re
+from . import global_consts as g
 
 METADATA = 'METADATA.pb'
 ZIPTYPE = '.zip'
@@ -66,15 +67,13 @@ def parse_metadata(metadata_path, filename):
     return metadata
 
 
-def collectfonts(source_directory):
+def collectfonts():
     """Goes through source directory and all subdirectories
     and writes a json file with all the font information.
 
-    Args:
-        source_directory (String): Relative path to source directory,
-                font files must be in subdirectories. JSON file will be
-                written to this directory.
     """
+
+    source_directory = g.PATH_RAW
 
     file_counter = 0
     file_ttf = 0
@@ -102,8 +101,7 @@ def collectfonts(source_directory):
                     filepath = os.path.join(root, file)
                     normalized_filepath = os.path.normpath(filepath)
                     # Write general info about font to dict/later json
-                    font_info = {'path': normalized_filepath,
-                                 'usable': True}
+                    font_info = {'usable': True}
 
                     file_usable += 1
 
@@ -112,7 +110,7 @@ def collectfonts(source_directory):
                         font_info['metadata'] = parse_metadata(
                             metadata_path, file)
 
-                    fonts_metadata[file.lower()[:-4]] = font_info
+                    fonts_metadata[normalized_filepath] = font_info
 
     # Write json
     description_json = os.path.join(source_directory, DESCRIPTION_JSON)

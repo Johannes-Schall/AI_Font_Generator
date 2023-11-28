@@ -1,7 +1,7 @@
 import os
-import json
 from tqdm import tqdm
 from fontTools import ttLib
+from . import global_consts as g
 from . import datarenderer, fontdb_handler
 import numpy as np
 
@@ -83,9 +83,7 @@ def no_good_cmap(font, *args, **kwargs):
     return cmap is None
 
 
-def filter_fonts(path_raw_dir,
-                 path_font_db_json,
-                 required_chars="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789ÄäÖöÜüß",
+def filter_fonts(required_chars="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789ÄäÖöÜüß",
                  filter_funcs=[
                                 #cmap_is_corrupted,
                                 #no_good_cmap,
@@ -96,8 +94,6 @@ def filter_fonts(path_raw_dir,
     """ Filters fonts in json font database and writes a log file with the results.
 
     Args:
-        path_raw_dir (String): Path to directory with raw data.
-        path_font_db_json (String): Path to the font database json file.
         required_chars (str, optional): Characterset that is required for font to be considered complete. Defaults to "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789ÄäÖöÜüß".
         filter_funcs (list, optional): List of filters that are getting applied to fonts. Defaults to [ cmap_is_corrupted, no_good_cmap, has_not_all_chars, has_empty_glyphs, out_of_bounds ].
 
@@ -105,15 +101,19 @@ def filter_fonts(path_raw_dir,
         Dictionary: Returns dictionary with filter results.
     """
     
-    with open(path_font_db_json, 'r', encoding='utf-8') as file:
-        font_db = json.load(file)
+    path_raw_dir = g.PATH_RAW
+    path_font_db_json = g.PATH_TO_JSON_FONT_DB
+    
+    
+    # with open(path_font_db_json, 'r', encoding='utf-8') as file:
+    #     font_db = json.load(file)
     
     # Result of filtering is stored in a dictionary. At the end of this function,
     # this dictionary is written to the json font database.    
     filter_dictionary = {}
     
-
-    font_files_pathes = [font_db[font]['path'] for font in font_db.keys()]
+    font_files_pathes = fontdb_handler.font_file_list()
+    #font_files_pathes = [font_db[font_path] for font_path in font_db.keys()]
 
     filter_counter_dict = {}
     filter_counter_dict['num_font_files_processed'] = len(font_files_pathes)
