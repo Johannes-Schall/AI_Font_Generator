@@ -18,7 +18,7 @@ def font_file_list():
     return [font_path for font_path in data.keys() if data[font_path].get("usable", True)]
 
 
-def write_filter_results(path_font_db_json, filter_dictionary):
+def write_filter_results(filter_dictionary):
     """Writes filter results to a log file.
 
     Args:
@@ -26,7 +26,7 @@ def write_filter_results(path_font_db_json, filter_dictionary):
         filter_dictionary (Dictionary): Dictionary with filter results.
     """
 
-    with open(path_font_db_json, 'r', encoding='utf-8') as file:
+    with open(g.PATH_TO_JSON_FONT_DB, 'r', encoding='utf-8') as file:
         font_db = json.load(file)
 
     for font_path in font_db.keys():
@@ -35,7 +35,7 @@ def write_filter_results(path_font_db_json, filter_dictionary):
                 font_db[font_path].update(value)
                 break
 
-    with open(path_font_db_json, 'w', encoding='utf-8') as file:
+    with open(g.PATH_TO_JSON_FONT_DB, 'w', encoding='utf-8') as file:
         json.dump(font_db, file, indent=4)
 
 

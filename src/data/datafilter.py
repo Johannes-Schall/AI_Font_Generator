@@ -212,7 +212,7 @@ def filter_fonts(required_chars="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstu
             log_file.write(f"{key}: {value}\n")
             
         # Write filter results to json font database
-        fontdb_handler.write_filter_results(path_font_db_json, filter_dictionary)
+        fontdb_handler.write_filter_results(filter_dictionary)
 
     print(
         f"Processed {idx+1} fonts. Found {filter_counter_dict['num_usable_fonts']} usable fonts.")

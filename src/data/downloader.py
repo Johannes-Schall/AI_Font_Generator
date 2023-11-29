@@ -8,7 +8,6 @@ import requests
 from . import global_consts as g
 
 
-
 GLYZPHAZZN_URL = 'https://storage.googleapis.com/magentadata/models/svg_vae/glyphazzn_urls.txt'
 
 
@@ -17,7 +16,7 @@ def get_font_dbs(db_flags):
 
     Args:
         db_flags (Dictionary): Sets flags to download specific databases
-        
+
     """
 
     path_target = g.PATH_RAW
@@ -136,12 +135,12 @@ def get_github_db(path_target, db_name, repo_url, directory_list=None, private=F
         print(f"Error: {e}")
 
 
-def update_glyphazzn_list(path_glyphazzn, ):
+def update_glyphazzn_list():
     """ Download the latest link list for the glyphazzn dataset."""
-    
+
     path_glyphazzn = g.PATH_RAW
     path_target = g.PATH_URL_LISTS
-    
+
     # Check if target directory already exists
     if not os.path.isdir(path_glyphazzn):
         os.makedirs(path_glyphazzn)
@@ -194,7 +193,7 @@ def extract_urls(path_glyphazzn, filename, path_target):
     print(f"{filename} successfully extracted.")
 
 
-def download_files_from_txts(path_source, path_target):
+def download_files_from_txts():
     """ Cycle through all txt files in a directory and queue the
         files for parallel download.
 
