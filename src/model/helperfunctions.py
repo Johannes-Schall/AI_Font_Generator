@@ -4,7 +4,7 @@ import datetime
 import os
 from contextlib import redirect_stdout
 
-def render_charset(charset):
+def render_charset(charset, show_plot=True, figsize=None):
     """
     Renders a charset as a matplotlib figure.
 
@@ -12,12 +12,15 @@ def render_charset(charset):
         charset (np.array): Array of shape (size, size, num_glyphs)
     """
     num_glyphs = charset.shape[2]
-    fig, axs = plt.subplots(1, num_glyphs)
+    fig, axs = plt.subplots(1, num_glyphs, figsize=figsize)
     for idx in range(num_glyphs):
         axs[idx].imshow(charset[:, :, idx], cmap="gray")
         axs[idx].set_xticks([])
         axs[idx].set_yticks([])
-    plt.show()
+    if show_plot:
+        plt.show()
+    else:
+        return fig, axs
 
 def render_predictions(model, dataset_test, num_examples=4, figsize=(10, 10), 
                        black_white=False, show_plot=True, model_type="3dTensor-3dTensor"):

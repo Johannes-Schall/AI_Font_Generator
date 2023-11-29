@@ -217,3 +217,74 @@ def filter_fonts(required_chars="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstu
     print(
         f"Processed {idx+1} fonts. Found {filter_counter_dict['num_usable_fonts']} usable fonts.")
     return filter_counter_dict
+
+
+def analyse_font_file(
+        font_file,
+        required_chars="ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789ÄäÖöÜüß",
+        filter_funcs=[
+                    has_not_all_chars,
+                    has_empty_glyphs,
+                    out_of_bounds
+        ]):
+    filter_dictionary = {}
+
+    try:
+        font = ttLib.TTFont(font_file)
+    except:
+        return "Corrupted file! File could not be opened."
+    try:
+        cmap = font['cmap'].getBestCmap()
+        if cmap is None:
+            return "Corrupted file! Cmap could not be opened."
+        chars_in_font = {chr(c) for c in font['cmap'].getBestCmap().keys()}
+    except:
+        return "Corrupted file! Cmap could not be opened."
+    
+    kwargs = {'chars_to_check': required_chars,
+              'font': font,
+              'font_file_path': font_file}
+    
+    for func in filter_funcs:
+        if func(**kwargs):
+            filter_dictionary[func.__name__] = True
+        else:
+            filter_dictionary[func.__name__] = False
+
+    if filter_dictionary['has_not_all_chars']:
+        chars_missing = [c for c in required_chars if c not in chars_in_font]
+        filter_dictionary['chars_not_in_font_cmap'] = chars_missing
+    if filter_dictionary['has_empty_glyphs']:
+        glyph_array = datarenderer.render_font(font_file,
+                                                chars=required_chars,
+                                                size=2,
+                                                normalize=True)
+        glyph_array = 1. - glyph_array
+        empty_entries = (np.sum(glyph_array, axis=(0, 1)) == 0)
+        empty_chars = [c for i, c in enumerate(required_chars) if empty_entries[i]]
+        filter_dictionary['chars_with_empty_glyphs'] = empty_chars
+
+    # Check if chars of chars_with_empty_glyphs are also in chars_not_in_font_cmap and remove them from chars_with_empty_glyphs
+    # TODO: make this work around obsolete
+    if filter_dictionary['has_empty_glyphs'] and filter_dictionary['has_not_all_chars']:
+        chars_with_empty_glyphs = filter_dictionary['chars_with_empty_glyphs']
+        chars_not_in_font_cmap = filter_dictionary['chars_not_in_font_cmap']
+        chars_with_empty_glyphs = [c for c in chars_with_empty_glyphs if c not in chars_not_in_font_cmap]
+        filter_dictionary['chars_with_empty_glyphs'] = chars_with_empty_glyphs
+        if len(chars_with_empty_glyphs) == 0:
+            filter_dictionary['has_empty_glyphs'] = False
+            # erase chars_with_empty_glyphs from filter_dictionary
+            filter_dictionary.pop('chars_with_empty_glyphs')
+
+    analysis_string = ""
+    for key, value in filter_dictionary.items():
+        if key == 'has_not_all_chars' and value:
+            analysis_string += f"Found missing characters: {filter_dictionary['chars_not_in_font_cmap']}\n"
+        if key == 'has_empty_glyphs' and value:
+            analysis_string += f"Found empty glyph entries: {filter_dictionary['chars_with_empty_glyphs']}\n"
+        if key == 'out_of_bounds' and value:
+            analysis_string += f"The characters of this font are not well defined within the metrics.\n"
+    if analysis_string == "":
+        analysis_string = "This is a good font file. No need to worry."
+
+    return analysis_string
