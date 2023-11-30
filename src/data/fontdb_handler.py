@@ -1,5 +1,6 @@
 """ Module for handling the json font database. """
 import json
+import os
 from . import global_consts as g
 
 def font_file_list():
@@ -9,13 +10,11 @@ def font_file_list():
         List: Returns list of paths to all used fonts.
     """
 
-    path_to_json = g.PATH_TO_JSON_FONT_DB
-
-    with open(path_to_json, 'r', encoding='utf-8') as file:
+    with open(g.PATH_TO_JSON_FONT_DB, 'r', encoding='utf-8') as file:
         data = json.load(file)
-
+        
     # Extract paths of all usable fonts
-    return [font_path for font_path in data.keys() if data[font_path].get("usable", True)]
+    return [os.path.normpath(font_path) for font_path in data.keys() if data[font_path].get("usable", True)]
 
 
 def write_filter_results(filter_dictionary):

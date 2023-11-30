@@ -67,8 +67,12 @@ def render_fonts(font_file_paths: list,
     """
     # reserve memory for the arrays
     arrays = np.empty((len(font_file_paths), size, size, len(chars))).astype(dtype)
+
     for idx, font_file_path in enumerate(font_file_paths):
-        arrays[idx, :, :, :] = render_font(font_file_path, size, chars, normalize, invert, dtype)
+        try:
+            arrays[idx, :, :, :] = render_font(font_file_path, size, chars, normalize, invert, dtype)
+        except Exception as e:
+            print(f"Error while rendering font {font_file_path}: {e}")
     return arrays
 
 def plot_glyphs(font_file_paths,

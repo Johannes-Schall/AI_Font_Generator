@@ -45,6 +45,7 @@ def evaluate_image(image_paths, char, text_query=None, verbose=False) -> dict:
 
     # Load the images into a numpy array
     # The numpy array will have the shape ([img_data], size, size, [char]])
+    print('Rendering images...')
     image_arrays = datarenderer.render_fonts(image_paths, chars=char)
 
     # Convert images to PIL images
