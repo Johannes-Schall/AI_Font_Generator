@@ -53,6 +53,6 @@ def is_glyph_usable(path_fonts: list, char: str) -> dict:
     with open(g.PATH_TO_JSON_FONT_DB, 'r', encoding='utf-8') as file:
         data = json.load(file)
 
-    return {font_path: data[font_path]["clip_filter"].get(char, True)
-            if "clip_filter" in data[font_path] else True
+    return {font_path: data[font_path].get(char, True)
+            if char in data[font_path] else True
             for font_path in path_fonts}
