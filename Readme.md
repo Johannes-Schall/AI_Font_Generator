@@ -28,7 +28,7 @@ All information about the fonts are stored in a central json file that is being 
 We explored several techniques on how to generate the missing glyphs and decided to focus and compared their results. Our models were trained on the dataset described above. Our goal was to determine the best model for our task. We decided to proceed using a model based on EfficientNet and an Encoder/Decoder model we created from scratch. 
 To assess the models' performance, we also compared different techniques, best described as "some chars in, one char out" vs. "many chars in, many chars out". The latter proved to be more efficient with lower loss right off the bat.
 
-#### Assessment
+## Assessment
 
 Both models are capable of generating the missing glyphs. The character 'ß' proved to be more challenging than the others and the effects of using CLIP to filter placeholders improved the predictions significantly.
 
@@ -36,15 +36,15 @@ The model we built from scratch turned out to be a notch better than the one bui
 
 __________
 
-### Folders
+### Directories
 
-Notebooks: Holds the Jupyter notebooks for downloading, filtering and exploring the dataset and notebooks with tests and helpers (like sync_data) we used to synchronize our local datasets.
+**Notebooks**: Holds the Jupyter notebooks for downloading, filtering and exploring the dataset and notebooks with tests and helpers (like sync_data) we used to synchronize our local datasets.
 
-Src:
+**Src**:
 - data: Holds the python scripts executed from the notebooks for downloading, filtering, running CLIP classifier, building and handling the central json file. Please note that for running CLIP, a huggingface API Key is required in the local env
 - app: For Gradio, the app we created to showcase the generation of glyphs
 - model: helperfunctions to run the models
 
-Models: The models we created and logs to assess their validation and training losses
+**Models**: The models we created and logs to assess their validation and training losses
 
 
