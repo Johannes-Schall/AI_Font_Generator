@@ -86,25 +86,6 @@ def get_github_db(path_target, db_name, repo_url, directory_list=None, private=F
                        check=True,
                        env=env)
 
-    # Debugging:
-    # existing_remotes = subprocess.check_output(
-    #     ['git', 'remote'], cwd=path_db).decode().split()
-    # if 'origin' not in existing_remotes:
-    #     print("Adding Remote-Repository")
-    #     subprocess.run(['git', 'remote', 'add', 'origin',
-    #                    repo_url], cwd=path_db, check=True, env=env)
-
-    #     print("Fetch Remote-Repository mit ausführlichen Informationen")
-    #     fetch_output = subprocess.run(['git', 'fetch', '-v', 'origin', 'main'],
-    #                                   cwd=path_db,
-    #                                   capture_output=True,
-    #                                   text=True,
-    #                                   check=True,
-    #                                   env=env)
-
-    #     print("Standard Output:", fetch_output.stdout)
-    #     print("Standard Error:", fetch_output.stderr)
-
     # If only specific directories should be cloned or updated,
     # write the sparse checkout configuration file
     if len(directory_list) != 0:
@@ -164,29 +145,35 @@ def update_glyphazzn_list():
     extract_urls(path_glyphazzn, filename, path_target)
 
 
-def extract_urls(path_glyphazzn, filename, path_target):
-    """Extracts URLs from a text file and saves them to a new file."""
+def extract_urls(path_textfile, filename, path_target):
+    """ Extracts URLS from a txt file and saves them
 
-    input_file_path = os.path.join(path_glyphazzn, filename)
+    Args:
+        path_textfile (tring): Path to the txt file
+        filename (String): The filename of the txt
+        path_target (String): Target to save the extracted URLs
+    """
+
+
+    input_file_path = os.path.join(path_textfile, filename)
     out_file_path = os.path.join(path_target, filename[:-8] + '.txt')
 
     if not os.path.exists(path_target):
         os.makedirs(path_target)
 
-    # Regex zum Finden von URLs
+    # Regex to find URLS in a string
     url_regex = r'https?://\S+'
 
-    # Liste zum Speichern der gefundenen URLs
+    # List to store extracted URLs
     extracted_urls = []
 
-    # Datei öffnen und Zeile für Zeile lesen
     with open(input_file_path, 'r') as file:
         for line in file:
-            # Suche nach URLs in jeder Zeile
+            # Search URLs
             urls = re.findall(url_regex, line)
             extracted_urls.extend(urls)
 
-    # Extrahierte URLs in einer neuen Datei speichern
+    # Extract URLs and save them to a file
     with open(out_file_path, 'w') as file:
         for url in extracted_urls:
             file.write(url + '\n')

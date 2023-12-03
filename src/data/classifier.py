@@ -29,6 +29,7 @@ def evaluate_image(image_paths, char, text_query=None, verbose=False) -> dict:
         image_path (List[String]): List of image paths
         text_query (List[String]): List of text queries, first category is
             the one to be evaluated
+        verbose (bool, optional): Print additional information. Defaults to False.
 
     Returns:
         Dictionary: Returns True if the image is classified as the first category
@@ -71,10 +72,6 @@ def evaluate_image(image_paths, char, text_query=None, verbose=False) -> dict:
         logits_per_image = outputs.logits_per_image
         probs = logits_per_image.softmax(dim=1).detach().numpy()
 
-        # print(type(probs))
-        # print(probs.shape)
-        # print(probs)
-
         for j, probset in enumerate(probs):
             global_index = i + j
             #print(f"Prob: {probset}")
@@ -86,9 +83,6 @@ def evaluate_image(image_paths, char, text_query=None, verbose=False) -> dict:
                     print(f"   {text}: {probset[s]:.4f}")
 
             # Check whether highest score is for first category
-            # highest_score_index = np.argmax(probset)
-            # print(f"Highest score index: {highest_score_index}")
-            # is_first_category = text_query[highest_score_index] == text_query[0]
             results[image_paths[global_index]] = {char: bool(np.argmax(probset) == 0)}
 
     if verbose:

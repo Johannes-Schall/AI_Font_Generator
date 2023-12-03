@@ -21,9 +21,6 @@ from . import global_consts as g
 METADATA = 'METADATA.pb'
 ZIPTYPE = '.zip'
 FONTTYPES = ['.ttf', '.otf']
-DESCRIPTION_JSON = '00dataset.json'
-DIR_CONVERTED = 'converted'
-IGNORED_KEYS = ['designer', 'date_added', 'full_name', 'copyright']
 
 
 def parse_metadata(metadata_path, filename):
@@ -113,10 +110,9 @@ def collectfonts():
                     fonts_metadata[normalized_filepath] = font_info
 
     # Write json
-    description_json = os.path.join(source_directory, DESCRIPTION_JSON)
-    os.makedirs(os.path.dirname(description_json), exist_ok=True)
+    os.makedirs(os.path.dirname(g.PATH_TO_JSON_FONT_DB), exist_ok=True)
 
-    with open(description_json, 'w', encoding='utf-8') as jsonfile:
+    with open(g.PATH_TO_JSON_FONT_DB, 'w', encoding='utf-8') as jsonfile:
         json.dump(fonts_metadata, jsonfile, indent=4)
 
     print(f"Total files: {file_counter}")
